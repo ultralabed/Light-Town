@@ -43,7 +43,7 @@ public class Ending
         this.from = from;
         cam = game.Cam;
         borrowed = game.Lanterns < LampCount;
-        center = new Vector2(cam.transform.position.x, cam.transform.position.y + 1.6f);
+        center = new Vector2(cam.transform.position.x, cam.transform.position.y + 1.9f);
         root = Draw.Group("Ending", null, 0f, 0f);
 
         for (int i = 0; i < LampCount; i++)
@@ -65,7 +65,7 @@ public class Ending
     Vector2 LampTarget(int i)
     {
         float a = spin + i * Mathf.PI * 2f / LampCount;
-        return center + new Vector2(Mathf.Cos(a) * 2.4f, Mathf.Sin(a) * 1.5f);
+        return center + new Vector2(Mathf.Cos(a) * 2.4f, Mathf.Sin(a) * 1.3f);
     }
 
     // ------------------------------------------------------------ 每一幀
@@ -113,6 +113,15 @@ public class Ending
         }
 
         // ---- Result：每種結局的小動畫 ----
+        if (t > LinesEnd) HideLamps(float.MaxValue); // GAME OVER：燈全部熄掉
+        if (trueLines.Length > 0 && t > TrueStart)
+        {
+            // 真結局：只剩家裡那一盞燈亮著
+            lamps[0].gameObject.SetActive(true);
+            lamps[0].position = new Vector3(center.x, center.y + 0.2f, 0f);
+            cam.backgroundColor = Game.Night;
+            return;
+        }
         if (kind == 0)
         {
             // 跳電：「啪。」那一行出現時全黑
@@ -136,6 +145,9 @@ public class Ending
             cam.backgroundColor = Color.Lerp(Gold, Game.Night, Mathf.Clamp01((t - LineGap * 2f) / 5f));
         }
     }
+
+    float LinesEnd { get { return lines.Length * LineGap + 0.6f; } }
+    float TrueStart { get { return LinesEnd + 2.5f; } }
 
     void HideLamps(float leftOfX)
     {
@@ -197,13 +209,14 @@ public class Ending
         {
             if (borrowed && t > 1.5f)
             {
-                Ui.Text(new Rect(0f, 300f, w, 40f), "（試玩版只有 " + game.Lanterns + " 關，另外 " + (LampCount - game.Lanterns) + " 盞燈先借你）", 18, Color.white);
+                Ui.Text(new Rect(0f, 440f, w, 40f), "（試玩版只有 " + game.Lanterns + " 關，另外 " + (LampCount - game.Lanterns) + " 盞燈先借你）", 18, Color.white);
             }
             return;
         }
 
         if (phase == Phase.Wish)
         {
+            Ui.Fill(new Rect(0f, 280f, w, 220f), new Color(0f, 0f, 0f, 0.35f));
             Ui.Text(new Rect(0f, 285f, w, 50f), "請說出你的願望……", 32, Color.white);
 
             Rect field = new Rect(w * 0.5f - 210f, 345f, 420f, 46f);
@@ -234,19 +247,20 @@ public class Ending
         }
 
         // ---- Result ----
-        float linesEnd = lines.Length * LineGap + 0.6f;
+        float linesEnd = LinesEnd;
         bool over = t > linesEnd;
-        float trueStart = linesEnd + 2.5f;
+        float trueStart = TrueStart;
+        Ui.Fill(new Rect(0f, 285f, w, 180f), new Color(0f, 0f, 0f, 0.35f));
         bool showTrue = trueLines.Length > 0 && t > trueStart;
         float allEnd = trueLines.Length > 0 ? trueStart + trueLines.Length * 1.5f + 0.5f : linesEnd + 1.2f;
 
         if (showTrue)
         {
-            Ui.Text(new Rect(0f, 110f, w, 110f), "真結局", 60, new Color(1f, 0.9f, 0.5f));
+            Ui.Text(new Rect(0f, 205f, w, 70f), "真結局", 46, new Color(1f, 0.9f, 0.5f));
             int n = Mathf.Min(trueLines.Length, Mathf.FloorToInt((t - trueStart) / 1.5f) + 1);
             for (int i = 0; i < n; i++)
             {
-                Ui.Text(new Rect(0f, 285f + i * 34f, w, 34f), trueLines[i], 22, Color.white);
+                Ui.Text(new Rect(0f, 292f + i * 33f, w, 33f), trueLines[i], 22, Color.white);
             }
         }
         else
@@ -255,7 +269,7 @@ public class Ending
             int n = Mathf.Min(lines.Length, Mathf.FloorToInt(t / LineGap) + 1);
             for (int i = 0; i < n; i++)
             {
-                Ui.Text(new Rect(0f, 285f + i * 34f, w, 34f), lines[i], 22, Color.white);
+                Ui.Text(new Rect(0f, 292f + i * 33f, w, 33f), lines[i], 22, Color.white);
             }
         }
 
