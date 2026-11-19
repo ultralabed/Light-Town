@@ -22,24 +22,24 @@ public static class Levels
     // 第 1 關：夜市大街（教學關，一個黑傘幫）
     static void Level1(Level L)
     {
-        L.Name("夜市大街");
+        L.Name("Night Market Street");
 
         L.Ground(-6, 44);
         L.FallingFloor(44, 47);   // 整人：踩上去就掉
         L.Ground(47, 58);
 
         L.StartDoor(0);
-        L.Sign(3, "← → 走路，空白鍵跳");
+        L.Sign(3, "← → to walk, SPACE to jump");
 
         L.Stall(7.5f, new Color(0.80f, 0.25f, 0.25f));
-        L.Sign(11, "黑傘幫巡邏中，碰到就重來。跳過去！");
+        L.Sign(11, "Black Umbrella Gang ahead. Jump over!");
         L.Enemy(14, 22, 2.5f);
 
-        L.Sign(25, "拿到燈，門才會開");
+        L.Sign(25, "Grab the lantern to open the door");
         L.Lantern(28.5f, 2.7f);
         L.Stall(33, new Color(0.25f, 0.55f, 0.75f));
 
-        L.Sign(41, "這塊地很穩，相信我");
+        L.Sign(41, "This floor is very stable. Trust me.");
         L.ExitDoor(53);
     }
 }

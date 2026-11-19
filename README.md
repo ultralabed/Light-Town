@@ -66,6 +66,7 @@ static void Level2(Level L)
 | `Ending.cs` | 許願和整人結局 |
 | `GameInput.cs` | 鍵盤／滑鼠／觸控（新舊 Input System 都支援） |
 | `Ui.cs` | 畫字和按鈕 |
+| `Hero.cs` | 主角的樣子和走路、跳的小動畫 |
 | `Draw.cs` | 用程式畫方塊和圓（之後換美術圖改這裡） |
 
 ## 發布到 GitHub Pages
@@ -76,6 +77,10 @@ static void Level2(Level L)
 4. commit、push
 5. GitHub → Settings → Pages → Branch 選 `main`、資料夾選 `/docs`
 
+## 語言
+
+遊戲裡的字（告示牌、狀態列、結局）都是英文。程式註解和這份說明是中文。
+
 ## 字型
 
 `Assets/Resources/GameFont.ttf` 是 [Noto Sans TC](https://fonts.google.com/noto/specimen/Noto+Sans+TC)，
@@ -84,6 +89,6 @@ static void Level2(Level L)
 
 ## 還沒決定
 
-- 主角是誰、長什麼樣子（現在是一個有眼睛的方塊）
+- 主角的名字和正式造型（現在是用圓形和方塊拼的原創卡通小孩，在 `Hero.cs`）
 - 美術風格
 - 正式名稱（「七燈城」上架前要再查商標）

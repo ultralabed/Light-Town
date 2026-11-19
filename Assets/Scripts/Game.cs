@@ -35,9 +35,7 @@ public class Game : MonoBehaviour
     public Vector2 PlayerPos { get { return new Vector2(px, py + BodyH * 0.5f); } }
 
     // 主角
-    Transform player;
-    SpriteRenderer playerBody;
-    Transform playerEyes;
+    Hero hero;
     float px, py, vx, vy;
     bool grounded;
     Solid standing;
@@ -46,8 +44,6 @@ public class Game : MonoBehaviour
 
     string toast = "";
     float toastTimer;
-
-    static readonly Color PlayerColor = new Color(0.35f, 0.85f, 0.80f);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Boot()
@@ -78,7 +74,7 @@ public class Game : MonoBehaviour
 
         // 中文字型：Assets/Resources/GameFont.ttf
         Ui.Font = Resources.Load<Font>("GameFont");
-        if (Ui.Font == null) Debug.LogWarning("找不到 Assets/Resources/GameFont.ttf，中文字可能顯示不出來。");
+        if (Ui.Font == null) Debug.LogWarning("Assets/Resources/GameFont.ttf not found. Text may not display correctly.");
 
         StartLevel(0);
     }
@@ -93,19 +89,15 @@ public class Game : MonoBehaviour
     void StartLevel(int index)
     {
         if (level != null && level.root != null) Destroy(level.root.gameObject);
-        if (player != null) Destroy(player.gameObject);
+        if (hero != null && hero.root != null) Destroy(hero.root.gameObject);
 
         levelIndex = index;
         var root = new GameObject("Level " + (index + 1)).transform;
         level = new Level(root);
         Levels.All[index](level);
 
-        // 主角（暫時是一個有眼睛的方塊，之後換圖）
-        player = Draw.Group("Player", null, 0f, 0f);
-        playerBody = Draw.Box(player, 0f, BodyH * 0.5f, HalfW * 2f, BodyH, PlayerColor, 10);
-        playerEyes = Draw.Group("Eyes", player, 0f, 0f);
-        Draw.Box(playerEyes, 0.02f, 0.85f, 0.12f, 0.2f, new Color(0.05f, 0.1f, 0.15f), 11);
-        Draw.Box(playerEyes, 0.26f, 0.85f, 0.12f, 0.2f, new Color(0.05f, 0.1f, 0.15f), 11);
+        // 主角（卡通小孩，樣子寫在 Hero.cs）
+        hero = new Hero();
 
         px = level.startX;
         py = 0f;
@@ -230,9 +222,7 @@ public class Game : MonoBehaviour
 
     void SyncPlayer()
     {
-        player.position = new Vector3(px, py, 0f);
-        if (vx > 0.01f) playerEyes.localPosition = new Vector3(0f, 0f, 0f);
-        else if (vx < -0.01f) playerEyes.localPosition = new Vector3(-0.28f, 0f, 0f);
+        hero.Animate(px, py, vx, vy, grounded, Time.deltaTime);
     }
 
     void FollowCamera(bool snap)
@@ -283,7 +273,7 @@ public class Game : MonoBehaviour
         if (level.lanternTaken)
         {
             // 拿到的燈跟在主角頭上
-            Vector3 want = new Vector3(px, py + BodyH + 0.7f, 0f);
+            Vector3 want = new Vector3(px, py + BodyH + 1.0f, 0f);
             level.lanternTf.position = Vector3.Lerp(level.lanternTf.position, want, 0.2f);
         }
         else
@@ -315,7 +305,7 @@ public class Game : MonoBehaviour
             {
                 level.lanternTaken = true;
                 if (level.exitDoor != null) level.exitDoor.color = Level.DoorOpen;
-                Say("拿到燈了！門開了。", 2f);
+                Say("Got the lantern! The door is open.", 2f);
             }
         }
 
@@ -323,7 +313,7 @@ public class Game : MonoBehaviour
         if (level.secretReturn && level.lanternTaken && !SecretFound && Mathf.Abs(px - level.startX) < 0.6f)
         {
             SecretFound = true;
-            Say("……你好像聽見家裡有人在等你。", 3f);
+            Say("...You think you hear someone waiting at home.", 3f);
         }
 
         // 出口
@@ -331,7 +321,7 @@ public class Game : MonoBehaviour
         if (me.Overlaps(door))
         {
             if (level.lanternTaken) FinishLevel();
-            else Say("門鎖著。先去拿燈！", 0.3f);
+            else Say("Locked. Get the lantern first!", 0.3f);
         }
     }
 
@@ -339,7 +329,7 @@ public class Game : MonoBehaviour
     {
         state = State.Dead;
         deadTimer = 0.5f;
-        playerBody.color = new Color(1f, 0.3f, 0.3f);
+        hero.Hurt();
     }
 
     void FinishLevel()
@@ -354,7 +344,7 @@ public class Game : MonoBehaviour
             state = State.Ending;
             Vector2 from = PlayerPos;
             if (level.root != null) Destroy(level.root.gameObject);
-            if (player != null) Destroy(player.gameObject);
+            if (hero != null && hero.root != null) Destroy(hero.root.gameObject);
             level = null;
             ending = new Ending(this, from);
         }
@@ -393,9 +383,9 @@ public class Game : MonoBehaviour
 
             // 上面那一排：第幾關、燈、重來次數
             Ui.Fill(new Rect(0f, 0f, w, 40f), new Color(0f, 0f, 0f, 0.45f));
-            Ui.Text(new Rect(14f, 0f, w, 40f), "第 " + (levelIndex + 1) + " 關　" + level.name, 20, Color.white, TextAnchor.MiddleLeft);
-            Ui.Text(new Rect(0f, 0f, w, 40f), "燈 " + Lanterns + "/" + Levels.TotalLanterns, 20, new Color(1f, 0.85f, 0.3f), TextAnchor.MiddleCenter);
-            Ui.Text(new Rect(0f, 0f, w - 14f, 40f), "重來 " + Restarts + " 次", 20, Color.white, TextAnchor.MiddleRight);
+            Ui.Text(new Rect(14f, 0f, w, 40f), "Level " + (levelIndex + 1) + "   " + level.name, 20, Color.white, TextAnchor.MiddleLeft);
+            Ui.Text(new Rect(0f, 0f, w, 40f), "Lanterns " + Lanterns + "/" + Levels.TotalLanterns, 20, new Color(1f, 0.85f, 0.3f), TextAnchor.MiddleCenter);
+            Ui.Text(new Rect(0f, 0f, w - 14f, 40f), "Retries " + Restarts, 20, Color.white, TextAnchor.MiddleRight);
 
             if (toastTimer > 0f)
             {
@@ -413,7 +403,7 @@ public class Game : MonoBehaviour
                 Rect j = new Rect(w * 0.6f + 6f, by, w * 0.4f - 12f, bh);
                 Ui.Fill(l, c); Ui.Text(l, "←", 44, t);
                 Ui.Fill(r, c); Ui.Text(r, "→", 44, t);
-                Ui.Fill(j, c); Ui.Text(j, "跳", 40, t);
+                Ui.Fill(j, c); Ui.Text(j, "JUMP", 36, t);
             }
         }
 
@@ -421,7 +411,7 @@ public class Game : MonoBehaviour
         if (Screen.height > Screen.width)
         {
             Ui.Fill(new Rect(0f, Ui.H * 0.4f, w, Ui.H * 0.2f), new Color(0f, 0f, 0f, 0.8f));
-            Ui.Text(new Rect(0f, Ui.H * 0.4f, w, Ui.H * 0.2f), "請把手機橫過來玩", 16, Color.white);
+            Ui.Text(new Rect(0f, Ui.H * 0.4f, w, Ui.H * 0.2f), "Please rotate your phone sideways", 16, Color.white);
         }
     }
 }
