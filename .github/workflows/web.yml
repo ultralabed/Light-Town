@@ -1,0 +1,82 @@
+# 自動做出網頁版，放上 GitHub Pages。
+# 需要先在 GitHub → Settings → Secrets and variables → Actions 加三個 secret：
+#   UNITY_LICENSE（Unity_lic.ulf 檔案的全部內容）、UNITY_EMAIL、UNITY_PASSWORD
+# 還沒加的話，這個流程會自己跳過，不會報錯。
+name: Build web version and deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/intelligent-darwin-lojvc1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Check Unity license secrets
+        id: check
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          if [ -z "$UNITY_LICENSE" ]; then
+            echo "::notice::UNITY_LICENSE secret is not set yet, so the web build was skipped. See README.md."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ready == 'true'
+
+      - uses: actions/cache@v4
+        if: steps.check.outputs.ready == 'true'
+        with:
+          path: Library
+          key: Library-WebGL-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: Library-WebGL-
+
+      - name: Build WebGL with Unity
+        if: steps.check.outputs.ready == 'true'
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+          buildMethod: WebBuild.Build
+          allowDirtyBuild: true
+
+      - name: Check the build produced a web page
+        if: steps.check.outputs.ready == 'true'
+        run: test -f build/WebGL/web/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.check.outputs.ready == 'true'
+        with:
+          path: build/WebGL/web
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

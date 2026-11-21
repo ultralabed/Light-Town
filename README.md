@@ -12,17 +12,18 @@
 - ✅ 鍵盤＋手機觸控
 - ⬜ 第 2–7 關
 - ⬜ 隱藏真結局（程式已經寫好，等第 4 關做出來，在那關加一行 `L.SecretReturn()` 就會啟用）
-- ⬜ 網頁版（`docs/` 資料夾，要在 Unity 裡按 Build 才會有）
+- ⬜ 網頁版（自動 Build 的流程已經放好，等你在 GitHub 加上 Unity 授權就會啟動，見下面）
 
 ## 第一次打開（Unity 6）
 
-這個 repo 裡只有「程式」和「字型」，Unity 專案的其他檔案要你電腦上的 Unity 產生一次：
+這個 repo 已經是一個可以直接打開的 Unity 專案：
 
-1. Unity Hub → **New project** → 選 **Universal 2D** 範本，隨便取個名字建立（安裝 Unity 6 時記得勾 **Web Build Support**）。
-2. 關掉 Unity。把新專案資料夾裡的 `Assets`、`Packages`、`ProjectSettings` 三個資料夾，**複製到這個 repo 資料夾裡**（`Assets` 選「合併」，不要取代掉 `Scripts` 和 `Resources`）。
-3. Unity Hub → **Add** → 選這個 repo 資料夾 → 打開。
-4. 按上面的 **▶**。遊戲會自己開始，不用拖任何物件。
-5. 沒問題的話，把 `Assets`、`Packages`、`ProjectSettings` 都 commit 進 git，以後就不用再做一次。
+1. 安裝 **Unity 6**（建議 `6000.0.58f1`，安裝時勾 **Web Build Support**）。
+2. Unity Hub → **Add** → 選這個 repo 資料夾 → 打開。（第一次會跑幾分鐘，Unity 會自己補上缺的設定檔。）
+3. 按上面的 **▶**。遊戲會自己開始，不用拖任何物件。
+4. Unity 自己產生的 `ProjectSettings/`、`Packages/packages-lock.json`、`*.meta` 檔，請一起 commit 進 git。
+
+> 專案用的是 Unity 內建的畫面系統（不是 Universal 2D 範本），因為遊戲只畫方塊和圓形，這樣網頁版比較小、也比較不容易出錯。
 
 ## 操作
 
@@ -69,13 +70,25 @@ static void Level2(Level L)
 | `Hero.cs` | 主角的樣子和走路、跳的小動畫 |
 | `Draw.cs` | 用程式畫方塊和圓（之後換美術圖改這裡） |
 
-## 發布到 GitHub Pages
+## 發布到 GitHub Pages（自動）
 
-1. Unity：**File → Build Profiles → Web → Switch Platform**
-2. **Player Settings → Publishing Settings → Compression Format 設成 Disabled**（或勾 Decompression Fallback），不然網頁打不開
-3. **Build**，輸出資料夾選這個 repo 裡的 `docs`
-4. commit、push
-5. GitHub → Settings → Pages → Branch 選 `main`、資料夾選 `/docs`
+`.github/workflows/web.yml` 會在每次 push 之後，自動在 GitHub 的電腦上做出網頁版，再放上 GitHub Pages。
+你只要做一次下面的設定：
+
+1. **打開 Pages**：GitHub → repo 的 **Settings → Pages → Source** 選 **GitHub Actions**。
+2. **找到 Unity 授權檔**：在你電腦上用 Unity Hub 登入並啟用免費的 Personal 授權，然後找這個檔案：
+   - Windows：`C:\ProgramData\Unity\Unity_lic.ulf`
+   - Mac：`/Library/Application Support/Unity/Unity_lic.ulf`
+3. **加三個 secret**：GitHub → **Settings → Secrets and variables → Actions → New repository secret**
+   - `UNITY_LICENSE`：用記事本打開 `Unity_lic.ulf`，把全部內容貼上
+   - `UNITY_EMAIL`：你的 Unity 帳號 email
+   - `UNITY_PASSWORD`：你的 Unity 密碼
+4. **跑一次**：GitHub → **Actions → Build web version and deploy to GitHub Pages → Run workflow**。
+   大約 10–20 分鐘後，網址會出現在 Settings → Pages。
+
+還沒加 secret 的時候，這個流程會自己跳過，不會出現紅色失敗。
+
+想在自己電腦上做網頁版：Unity 上方選單 **Seven Lantern City → Build Web Version**，結果在 `build/WebGL/web`。
 
 ## 語言
 
